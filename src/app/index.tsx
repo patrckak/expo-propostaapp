@@ -1,61 +1,103 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { Button } from '@/components/ui/Button';
+import { MetricCard } from '@/components/MetricCard';
+import { OrcamentoCard } from '@/components/OrcamentoCard';
+import { Spacing } from '@/constants/theme';
+import { metricas, orcamentos } from '@/data/mockData';
 
 export default function HomeScreen() {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const ultimosOrcamentos = orcamentos.slice(0, 10);
+
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <ThemedText type="title" style={styles.title}>
+                Dashboard
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Visão geral do seu negócio
+              </ThemedText>
+            </View>
+            <Button
+              title="Novo Orçamento"
+              onPress={() => router.push('/novo-orcamento')}
+              style={styles.newButton}
+            />
+          </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+          {/* Métricas */}
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Resumo
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.metricsContainer}
+            >
+              <MetricCard
+                title="Faturamento Mensal"
+                value={formatCurrency(metricas.faturamentoMensal)}
+              />
+              <MetricCard
+                title="Serviços Ativos"
+                value={metricas.totalServicos}
+                subtitle="em andamento"
+              />
+              <MetricCard
+                title="Clientes em Débito"
+                value={metricas.clientesEmDebito}
+                subtitle="requer atenção"
+              />
+              <MetricCard
+                title="Orçamentos Pendentes"
+                value={metricas.orcamentosPendentes}
+                subtitle="aguardando resposta"
+              />
+            </ScrollView>
+          </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
+          {/* Últimos Orçamentos */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>
+                Últimos Orçamentos
+              </ThemedText>
+              <TouchableOpacity onPress={() => router.push('/orcamentos')}>
+                <ThemedText type="linkPrimary" themeColor="primary">Ver todos</ThemedText>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.orcamentosList}>
+              {ultimosOrcamentos.map((orcamento) => (
+                <OrcamentoCard
+                  key={orcamento.id}
+                  orcamento={orcamento}
+                  onPress={() => router.push(`/orcamento/${orcamento.id}`)}
+                />
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -64,35 +106,48 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: Spacing.six,
+  },
+  header: {
     paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.four,
+    gap: Spacing.three,
   },
   title: {
-    textAlign: 'center',
+    fontSize: 32,
+    marginBottom: Spacing.one,
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
+  newButton: {
     alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  },
+  section: {
+    paddingTop: Spacing.three,
+    gap: Spacing.three,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  sectionTitle: {
+    fontSize: 20,
+  },
+  metricsContainer: {
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
+  },
+  orcamentosList: {
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.three,
   },
 });
